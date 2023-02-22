@@ -1,0 +1,305 @@
+---
+title: "DSCI300 Mini Project 6 - Linear Regression"
+author: "Nisi Mohan Kuniyil 300321388"
+date: "21/11/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(cache = FALSE)
+```
+
+```{r, echo=FALSE, cache=FALSE}
+library(stringr)
+library(fastDummies)
+library(GGally)
+library(e1071)
+#library(gapminder)
+library(ggplot2)
+library(graphics)
+#library(magrittr)
+library(dplyr)
+#library(plyr)
+
+#library(purrr)
+#library(tidyverse)
+
+```
+
+
+
+
+
+# Problem Statement
+
+**Regression Analysis of car prices in the US Automobile Market**
+
+An automobile company is planning to enter the US automotive market. As part of their rigorous market research, they would like to get a thorough understanding of the key factors that drive the price of cars in the US. They collected a decent amount of data about the cars that are currently on the market, recording a diverse set of attributes. Create a regression model that can predict the price of a car from a set of selected features, and also analyze how much these features can explain the variations of car prices in the US.
+
+
+
+# Solution
+
+## Exploratory Data Analysis
+
+We start off by exploring the data variables and see if there is any correlation between them by plotting the correlation matrix. It shows that the features enginesize, curbweight, horsepower, carwidth, wheelbase, and carheight are positively correlated with price, whereas, highwaympg and citympg are negatively correlated with price.
+
+```{r,echo=FALSE}
+
+CarPrice <- read.csv("CarPrice.csv")
+ggcorr(CarPrice, label = TRUE, label_size = 2.9, hjust = 1, layout.exp = 2)
+```
+
+
+
+
+# Modeling
+
+The next step is to compute the individual $R^{2}$ values for the most promising features we identified from the correlation matrix. These values can be used to interpret the factors that have an influence on the price of a car. We omitted carwidth, carlength, and wheelbase because they all have a strong correlation with curbweight and it makes sense to get rid of the redundant variables. 
+
+
+
+                rSquared     
+-----------   ------------         
+    enginesize  0.764129136        
+    horsepower  0.653088356        
+    peakrpm     0.007270487           
+    citympg     0.470254895
+    highwaympg  0.486644493
+    curbweight  0.697734241
+      
+
+The best indicator of the price is the _enginesize_ with an $R^{2} \approx$ 0.764.
+
+R-squared measures the strength of the relationship between your model and the dependent variable on a 0-100% scale. Since there appeared to be a strong relationship between engine size and price of the car, a scatter plot has used to visualize this relationship. The scatter plot shows a positive correlation between engine size and price. Also, it can be seen that the data points are closer to the regression line.
+
+```{r, echo=FALSE}
+
+CarPrice_df <- CarPrice[,c("CarName","curbweight","enginesize","horsepower","peakrpm","citympg","highwaympg","price")]
+
+```
+
+```{r, echo=FALSE}
+
+plot(CarPrice_df$enginesize, CarPrice_df$price,
+     xlab = "Engine Size",
+     ylab = "Price",
+     main = "Correlation between Engine Size and Price"
+     )
+
+abline(lm(CarPrice_df$price ~ CarPrice_df$enginesize))
+```
+
+
+
+
+
+
+Next, We develop a multiple regression equation using _enginesize_, _horsepower_, _peakrpm_, _citympg_, and _highwaympg_ to estimate price, and check how well the regression model explains the variability in price compared to the individual $R^2$.
+
+
+$$ price = \ 97.75x_1+29.10x_2+2.10x_3 -38.11x_4+120.3x_5+5.93x_6 -30810\ $$
+
+where $x_1$ represents engine size, $x_2$ represents _horsepower_, $x_3$ represents _peakrpm_, $x_4$ represents _citympg_, $x_5$ represents _highwaympg_, $x_6$ curb weight.
+
+The $R^2$ value for this multiple regression model is 0.823. When a regression model accounts for more of the variance, the data points are closer to the regression line. When we used a single variable alone for the prediction the highest $R^2$ the value that we got was 0.764, whereas the multiple regression gives us better $R^2$. 
+
+
+```{r,echo=FALSE}
+
+Price_lm <- lm(CarPrice_df$price ~ CarPrice_df$enginesize + CarPrice_df$horsepower +
+CarPrice_df$peakrpm + CarPrice_df$citympg+ CarPrice_df$highwaympg + CarPrice_df$curbweight)
+summary(Price_lm)
+
+
+
+```
+
+The coefficient t-value for engine size, horse power and curb weight are far away from zero as this would indicate we could easily reject the null hypothesis, that is we could declare a relationship between these variables and the price of the car. We do not have to consider the variables which have t-value closer to zero for predicting the price. Since these variables do not indicate any stronger relationship in predicting the price. From the above summary, it is clear that enginesize and curbweight are both significant at $\alpha$ 0.001 and 0.01 respectively.  
+
+It appears to be there is a negative correlation between city mpg and price from the correlation matrix plotted above. Furthermore, the linear model also shows that city mpg has a negative impact on the prediction of price.
+
+To interpret this more easily, a scatter plot of price against city mpg is plotted. It appears to be there is a negative relationship between city mpg and price. Also, the observations are not fitted closer to the regression line. 
+
+```{r, echo=FALSE}
+plot(CarPrice_df$citympg, CarPrice_df$price,
+     xlab = "City MPG",
+     ylab = "Price",
+     main = "Correlation between City mpg and Price"
+     )
+
+abline(lm(CarPrice_df$price ~ CarPrice_df$citympg))
+```
+
+
+The above model gives a clearer image of which factors affect the pricing of cars. From the model, we could say that some variables are not significant for the prediction of the car price. It is surprising to see that horsepower does not have much significance in the prediction of the car price. Generally, expensive supercars tend to have engines with high horsepower. 
+
+In order to understand the effect of citympg, highwaympg and horsepower, we developed another model removing those variables and observed how $R^2$ varies.
+
+
+The second model regression equation is :
+
+$$ price = \ 11.56x_1+2.67x_2+5.606x_3-29400\ $$
+
+where $x_1$ is the _enginesize_, $x_2$ is the _peakrpm_, and $x_3$ is the _curbweight._ All these three variables are significant at $\alpha=0.001$ or 99.9% confidence level. Also, the $R^2$ value is 0.818 which means 81.8% of the variability in car price is explained by this model. The previous model has an $R^2$ of 0.823, which is not that significantly different from the second model $R^2$ 0.818.
+
+Since these two models have closer R-squared value, It is better to use the second model for the car price prediction because it is a simpler one.
+
+
+# Conclusion
+
+From the analysis, we found out that the variables that have a major impact on the variances in car prices are enginesize, curbweight, and peakrpm. The $R^2$ of the model is high, with 81.8%. This model is significant at $\alpha$ = 0.001 or 99.9% level.
+
+
+
+\newpage
+
+
+# Appendix 1: The Problem
+
+**Regression Analysis of car prices in the US Automobile Market**
+
+An automobile company  is looking  to enter the US automotive market. They are conducting market research to figure out 
+
+1. What are the key variables that affect the price of cars in the US. 
+2. How well those variables describe the price of a car.
+
+# Managerial Report
+
+1. Since there are a lot of variables in the CarPrice dataset it is better to understand the relationship between each variable and car price. First, identify the most correlated features by using a correlation matrix.
+
+2. From the correlation matrix take the variables which have a closer correlation with the price and use these variables to predict the car price. Here  curb weight, engine size, horsepower, peak rpm, city mpg, highway mpg appear to have a relationship with price. Use only single variables and predict which of these five factors provides the best single predictor of the car price?
+
+3. Develop an estimated regression equation that can be used to predict car price given the engine size(enginesize), horsepower, peak rpm(peakrpm), city miles per gallon(citympg), and highway miles per gallon(highwaympg). Test for individual significance and discuss your findings and conclusion.
+
+4. From the multiple regression above if any variable  does not have much significance remove those and predict car price using the rest of the variables. Based on the results of your analysis, what estimated regression equation would you recommend using to predict price? Provide an interpretation of the regression coefficients for this equation.
+
+
+\newpage
+
+# Appendix 2: Analysis
+
+Read in the dataset.
+
+```{r}
+
+CarPrice <- read.csv("CarPrice.csv")
+head(CarPrice)
+
+
+```
+# Question 1
+
+Develop a correlation matrix to check the relationship exists between each variables and price.
+
+```{r}
+ggcorr(CarPrice, label = TRUE, label_size = 2.9, hjust = 1, layout.exp = 2)
+```
+
+we will be taking only 7 columns from this to predict car price.
+
+```{r}
+
+CarPrice_df <- CarPrice[,c("CarName","curbweight","enginesize","horsepower","peakrpm","citympg","highwaympg","price")]
+
+head(CarPrice_df)
+```
+
+
+
+# Question 2
+
+
+Running linear regression on single variables to see which variable is the best predictor of car price. 
+
+
+```{r}
+
+rSquared <- c(
+enginesize = summary(lm(CarPrice_df$price ~ CarPrice_df$enginesize))$r.squared,
+horsepower = summary(lm(CarPrice_df$price ~ CarPrice_df$horsepower))$r.squared,
+peakrpm = summary(lm(CarPrice_df$price ~ CarPrice_df$peakrpm))$r.squared,
+citympg = summary(lm(CarPrice_df$price ~ CarPrice_df$citympg))$r.squared,
+highwaympg = summary(lm(CarPrice_df$price ~ CarPrice_df$highwaympg))$r.squared,
+curbweight = summary(lm(CarPrice_df$price ~ CarPrice_df$curbweight))$r.squared)
+cbind(rSquared)
+
+
+```
+
+
+The best indicator of car price prediction is Engine size with R2 approx 0.764
+
+
+```{r}
+
+plot(CarPrice_df$enginesize, CarPrice_df$price,
+     xlab = "Engine Size",
+     ylab = "Price",
+     main = "Correlation between Engine Size and Price"
+     )
+
+abline(lm(CarPrice_df$price ~ CarPrice_df$enginesize))
+```
+
+
+There may be  a positive relationship between price and engine size.
+
+
+
+```{r}
+
+plot(CarPrice_df$citympg, CarPrice_df$price,
+     xlab = "City MPG",
+     ylab = "Price",
+     main = "Correlation between City mpg and Price"
+     )
+
+abline(lm(CarPrice_df$price ~ CarPrice_df$citympg))
+```
+
+
+
+# Question 3
+
+Multiple linear regression using enginesize, horsepower, peakrpm, citympg, and highwaympg to estimate price.
+
+
+```{r}
+
+Price_lm <- lm(CarPrice_df$price ~ CarPrice_df$enginesize + CarPrice_df$horsepower +
+CarPrice_df$peakrpm + CarPrice_df$citympg+ CarPrice_df$highwaympg + CarPrice_df$curbweight)
+summary(Price_lm)
+
+
+
+```
+# Question 4
+
+After analyzing the first regression model, remove the variables that are not significant. Conduct another regression by using rest of the variables.
+
+
+```{r}
+
+Price_lmNew <- lm(CarPrice_df$price ~ CarPrice_df$enginesize  + CarPrice_df$peakrpm+ CarPrice_df$curbweight)
+summary(Price_lmNew)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
