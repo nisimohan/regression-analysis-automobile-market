@@ -21,5 +21,5 @@ An automobile company is planning to enter the US automotive market. As part of 
 
 We start off by exploring the data variables and see if there is any correlation between them by plotting the correlation matrix. It shows that the features __enginesize, curbweight, horsepower, carwidth, and carlength__ are positively correlated with price, whereas, __highwaympg and citympg__ are negatively correlated with price.
 
-![Correlation Plot](/Users/nisi/workspace/regression-analysis-automobile-market/Screenshots/correlation.png)
+![Correlation Plot](screenshots/correlation.png)
 
