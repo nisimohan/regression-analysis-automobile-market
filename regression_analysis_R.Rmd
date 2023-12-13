@@ -49,7 +49,7 @@ We start off by exploring the data variables and see if there is any correlation
 
 ```{r,echo=FALSE}
 
-CarPrice <- read.csv("CarPrice.csv")
+CarPrice <- read.csv("data/CarPrice.csv")
 ggcorr(CarPrice, label = TRUE, label_size = 2.9, hjust = 1, layout.exp = 2)
 ```
 
